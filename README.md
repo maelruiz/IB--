@@ -1,0 +1,1 @@
+This is a simple, interpreted, python/java syntax style programming language written in python, modelling the JETS pseudocode from IB. It requires no pip dependencies as of now, but requires the ```strings_with_arrows.py``` in order to work. 
