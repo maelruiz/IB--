@@ -1,0 +1,25 @@
+fun oopify(prefix)
+    return prefix + "oop"
+end
+
+fun join(elements, separator)
+    result = ""
+    len = len(elements)
+
+    for i = 0 to len then
+        result = result + elements/i
+        if i != len - 1 then result = result + separator
+    end
+
+    return result
+end
+
+fun map(elements, func)
+    new_elements = []
+    
+    for i = 0 to len(elements) then
+        append(new_elements, func(elements/i))
+    end
+
+    return new_elements
+end

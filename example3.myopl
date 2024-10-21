@@ -1,0 +1,25 @@
+NUMBERS = [1, 2, 3, 4, 5, 6]
+
+if len(NUMBERS) == 0 then
+    return "List is empty"
+end
+
+MIN_VAL = NUMBERS[0]
+MAX_VAL = NUMBERS[0]
+
+for I = 0 to len(NUMBERS) then
+    if NUMBERS[I] < MIN_VAL then
+        MIN_VAL = NUMBERS[I]
+    end
+    if NUMBERS[I] > MAX_VAL then
+        MAX_VAL = NUMBERS[I]
+    end
+end
+
+print("Min: " + str(MIN_VAL) + ", Max: " + str(MAX_VAL))
+
+fun add(a, b)
+    return a + b
+end 
+
+output add(1, 2)
