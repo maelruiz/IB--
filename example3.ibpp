@@ -1,13 +1,24 @@
-NUMBERS = [1, 2, 3, 4, 5, 6]
+NUMBERS = [1, 2, 3, 4, 5, 6]  
+
+if len(NUMBERS) == 0 then
+    print("List is empty")
+end
+
+for I = 0 to len(NUMBERS) then
+    print(NUMBERS[I])
+end
+
 
 if len(NUMBERS) == 0 then
     return "List is empty"
 end
 
 MIN_VAL = NUMBERS[0]
+output MIN_VAL
 MAX_VAL = NUMBERS[0]
+output MAX_VAL
 
-for I = 0 to len(NUMBERS) then
+for I = 0 to len(NUMBERS) then 
     if NUMBERS[I] < MIN_VAL then
         MIN_VAL = NUMBERS[I]
     end

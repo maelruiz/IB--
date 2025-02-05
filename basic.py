@@ -27,13 +27,14 @@ class Error:
     self.error_name = error_name
     self.details = details
 
+
+  
   def as_string(self):
     result  = f'{self.error_name}: {self.details}\n'
     result += f'File {self.pos_start.fn}, line {self.pos_start.ln + 1}'
     result += '\n\n' + string_with_arrows(self.pos_start.ftxt, self.pos_start, self.pos_end)
     return result
 
-# Error Classes
 class IllegalCharError(Error):
   def __init__(self, pos_start, pos_end, details):
     super().__init__(pos_start, pos_end, 'Illegal Character', details)
@@ -245,6 +246,7 @@ class Lexer:
         return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
 
     tokens.append(Token(TT_EOF, pos_start=self.pos))
+    print(f"Tokens: {tokens}")
     return tokens, None
 
   def make_number(self):
@@ -400,7 +402,14 @@ class ListNode:
     self.pos_start = pos_start
     self.pos_end = pos_end
 
+class ListAccessNode:
+    def __init__(self, var_name_tok, index_node):
+        self.var_name_tok = var_name_tok
+        self.index_node = index_node
 
+    def __repr__(self):
+        return f'({self.var_name_tok}, {self.index_node})'
+    
 class VarAccessNode:
   def __init__(self, var_name_tok):
     self.var_name_tok = var_name_tok
@@ -481,7 +490,7 @@ class WhileNode:
 
 class FuncDefNode:
   def __init__(self, var_name_tok, arg_name_toks, body_node, should_auto_return):
-    self.var_name_tok = var_name_tok``
+    self.var_name_tok = var_name_tok
     self.arg_name_toks = arg_name_toks
     self.body_node = body_node
     self.should_auto_return = should_auto_return
@@ -676,11 +685,31 @@ class Parser:
         if self.current_tok.type == TT_EQ:
             res.register_advancement()
             self.advance()
+
+            if self.current_tok.type == TT_LSQUARE:
+              list_expr = res.register(self.list_expr())
+              if res.error: return res
+              return res.success(list_expr)
+
             expr = res.register(self.expr())
             if res.error: return res
             return res.success(VarAssignNode(var_name, expr))
         else:
             self.reverse()
+
+        if self.current_tok.type == TT_LSQUARE:
+            res.register_advancement()
+            self.advance()
+            index = res.register(self.expr())
+            if res.error: return res
+            if self.current_tok.type != TT_RSQUARE:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected ']' after list index"
+                ))
+            res.register_advancement()
+            self.advance()
+            return res.success(ListAccessNode(var_name, index))
     
     if self.current_tok.matches(TT_KEYWORD, 'output'):
         res.register_advancement()
@@ -795,37 +824,67 @@ class Parser:
       res.register_advancement()
       self.advance()
       return res.success(StringNode(tok))
-
+    
     elif tok.type == TT_IDENTIFIER:
-      res.register_advancement()
-      self.advance()
-      return res.success(VarAccessNode(tok))
-
-    elif tok.type == TT_LPAREN:
-      res.register_advancement()
-      self.advance()
-      expr = res.register(self.expr())
-      if res.error: return res
-      if self.current_tok.type == TT_RPAREN:
         res.register_advancement()
         self.advance()
-        return res.success(expr)
-      else:
-        return res.failure(InvalidSyntaxError(
-          self.current_tok.pos_start, self.current_tok.pos_end,
-          "Expected ')'"
-        ))
 
-    elif tok.type == TT_LSQUARE:
-      list_expr = res.register(self.list_expr())
-      if res.error: return res
-      return res.success(list_expr)
+        if self.current_tok.type == TT_LPAREN:
+            res.register_advancement()
+            self.advance()
+            args = []
+            if self.current_tok.type == TT_RPAREN:
+                res.register_advancement()
+                self.advance()
+            else:
+                args.append(res.register(self.expr()))
+                if res.error:
+                    return res
+                while self.current_tok.type == TT_COMMA:
+                    res.register_advancement()
+                    self.advance()
+                    args.append(res.register(self.expr()))
+                    if res.error:
+                        return res
+                if self.current_tok.type != TT_RPAREN:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_tok.pos_start, self.current_tok.pos_end,
+                        "Expected ',' or ')'"
+                    ))
+                res.register_advancement()
+                self.advance()
+            return res.success(CallNode(tok, args))
+
+        if self.current_tok.type == TT_LSQUARE:
+            res.register_advancement()
+            self.advance()
+            expr = res.register(self.expr())
+            if res.error:
+                return res
+            if self.current_tok.type != TT_RSQUARE:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected ']' after list index"
+                ))
+            res.register_advancement()
+            self.advance()
+            return res.success(ListAccessNode(tok, expr))
+        
+        else: 
+          res.register_advancement()
+          self.advance()
+          return res.success(VarAccessNode(tok))
     
-    elif tok.matches(TT_KEYWORD, 'if'):
+    elif self.current_tok.matches(TT_KEYWORD, 'if'):
       if_expr = res.register(self.if_expr())
       if res.error: return res
       return res.success(if_expr)
-
+    
+    elif tok.type == TT_LSQUARE:
+          list_expr = res.register(self.list_expr())
+          if res.error: return res
+          return res.success(list_expr)
+    
     elif tok.matches(TT_KEYWORD, 'for'):
       for_expr = res.register(self.for_expr())
       if res.error: return res
@@ -861,7 +920,6 @@ class Parser:
         self.current_tok.pos_start, self.current_tok.pos_end,
         f"Expected '['"
       ))
-
     res.register_advancement()
     self.advance()
 
@@ -2044,6 +2102,7 @@ class SymbolTable:
 
 class Interpreter:
   def visit(self, node, context):
+      if isinstance(node, ListAccessNode): return self.visit_ListAccessNode(node, context)
       if isinstance(node, OutputNode): return self.visit_OutputNode(node, context)
       method_name = f'visit_{type(node).__name__}'
       method = getattr(self, method_name, self.no_visit_method)
@@ -2062,7 +2121,20 @@ class Interpreter:
     if res.should_return(): return res
     print(value) 
     return res.success(value)
+  
+  def visit_Token(self, node, context):
+    res = RTResult()
+    value = context.symbol_table.get(node.value)
 
+    if not value:
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            f"'{node.value}' is not defined",
+            context
+        ))
+
+    value = value.copy().set_pos(node.pos_start, node.pos_end).set_context(context)
+    return res.success(value)
   def visit_NumberNode(self, node, context):
     return RTResult().success(
       Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
@@ -2132,6 +2204,39 @@ class Interpreter:
     value = value.copy().set_pos(node.pos_start, node.pos_end).set_context(context)
     return res.success(value)
 
+  def visit_ListAccessNode(self, node, context):
+    res = RTResult()
+    list_value = res.register(self.visit(node.var_name_tok, context))
+    if res.should_return(): return res
+
+    index_value = res.register(self.visit(node.index_node, context))
+    if res.should_return(): return res
+
+    if not isinstance(list_value, List):
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            "Only lists can be accessed with '[]'",
+            context
+        ))
+
+    if not isinstance(index_value, Number):
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            "Index must be an integer",
+            context
+        ))
+
+    try:
+        element = list_value.elements[index_value.value]
+    except IndexError:
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            "Index out of range",
+            context
+        ))
+
+    return res.success(element)
+
   def visit_VarAssignNode(self, node, context):
     res = RTResult()
     var_name = node.var_name_tok.value
@@ -2145,6 +2250,7 @@ class Interpreter:
     res = RTResult()
     left = res.register(self.visit(node.left_node, context))
     if res.should_return(): return res
+    
     right = res.register(self.visit(node.right_node, context))
     if res.should_return(): return res
 

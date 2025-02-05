@@ -581,11 +581,6 @@ class Parser:
     self.tok_idx -= amount
     self.update_current_tok()
     return self.current_tok
-  
-  def get_previous_token(self):
-    if self.tok_idx > 0:
-      return self.tokens[self.tok_idx - 1]
-    return None
 
   def update_current_tok(self):
     if self.tok_idx >= 0 and self.tok_idx < len(self.tokens):
@@ -867,15 +862,7 @@ class Parser:
         self.current_tok.pos_start, self.current_tok.pos_end,
         f"Expected '['"
       ))
-
-    if self.get_previous_token() == TT_IDENTIFIER:
-      list_name = self.get_previous_token()
-      res.register_advancement()
-      self.advance()
-      index = self.current_tok
-      result = list_name.dived_by(index)
-      return res.success(result)
-
+    
     res.register_advancement()
     self.advance()
 
@@ -2161,6 +2148,10 @@ class Interpreter:
     if res.should_return(): return res
     right = res.register(self.visit(node.right_node, context))
     if res.should_return(): return res
+
+#######
+#HAVE TO FIX ACCESSING LISTS
+#######
 
     if node.op_tok.type == TT_PLUS:
       result, error = left.added_to(right)
