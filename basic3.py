@@ -2150,7 +2150,7 @@ class Interpreter:
     if res.should_return(): return res
 
 #######
-#HAVE TO FIX ACCESSING LISTS
+#HAVE TO FIX ACCESSING LISTS - error 21
 #######
 
     if node.op_tok.type == TT_PLUS:
