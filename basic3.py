@@ -620,7 +620,7 @@ class Parser:
         newline_count += 1
       if newline_count == 0:
         more_statements = False
-      
+
       if not more_statements: break
       statement = res.try_register(self.statement())
       if not statement:
@@ -680,6 +680,20 @@ class Parser:
             expr = res.register(self.expr())
             if res.error: return res
             return res.success(VarAssignNode(var_name, expr))
+        elif self.current_tok.type == TT_LSQUARE:
+            res.register_advancement()
+            self.advance()
+            expr = res.register(self.expr())
+            if res.error: return res
+            if self.current_tok.type != TT_RSQUARE:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected ']'"
+                ))
+            res.register_advancement()
+            self.advance()
+            return res.success(BinOpNode(var_name, TT_DIV, expr))
+                        
         else:
             self.reverse()
     
@@ -690,6 +704,8 @@ class Parser:
         if res.error: return res
         return res.success(OutputNode(expr, self.current_tok.pos_start, self.current_tok.pos_start.copy()))
     
+######### INCLUDE input the same way as output
+
     node = res.register(self.bin_op(self.comp_expr, ((TT_KEYWORD, 'and'), (TT_KEYWORD, 'or'))))
 
     if res.error:
@@ -862,7 +878,6 @@ class Parser:
         self.current_tok.pos_start, self.current_tok.pos_end,
         f"Expected '['"
       ))
-    
     res.register_advancement()
     self.advance()
 
@@ -2150,7 +2165,7 @@ class Interpreter:
     if res.should_return(): return res
 
 #######
-#HAVE TO FIX ACCESSING LISTS - error 21
+#HAVE TO FIX ACCESSING LISTS
 #######
 
     if node.op_tok.type == TT_PLUS:

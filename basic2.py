@@ -374,6 +374,12 @@ class OutputNode:
         self.pos_start = pos_start
         self.pos_end = pos_end
 
+class InputNode:
+    def __init__(self, expr_node, pos_start, pos_end):
+        self.expr_node = expr_node
+        self.pos_start = pos_start
+        self.pos_end = pos_end
+
 class NumberNode:
   def __init__(self, tok):
     self.tok = tok
@@ -704,6 +710,13 @@ class Parser:
         if res.error: return res
         return res.success(OutputNode(expr, self.current_tok.pos_start, self.current_tok.pos_start.copy()))
     
+    if self.current_tok.matches(TT_KEYWORD, 'input'):
+        res.register_advancement()
+        self.advance()
+        expr = res.register(self.expr())
+        if res.error: return res
+        return res.success(InputNode(expr, self.current_tok.pos_start, self.current_tok.pos_start.copy()))
+
     node = res.register(self.bin_op(self.comp_expr, ((TT_KEYWORD, 'and'), (TT_KEYWORD, 'or'))))
 
     if res.error:
@@ -1846,20 +1859,20 @@ class BuiltInFunction(BaseFunction):
   execute_print_ret.arg_names = ['value']
   
   def execute_input(self, exec_ctx):
-    text = input()
+    text = input(exec_ctx.symbol_table.get('value'))
     return RTResult().success(String(text))
-  execute_input.arg_names = []
+  execute_input.arg_names = ['value']
 
   def execute_input_int(self, exec_ctx):
     while True:
-      text = input()
+      text = input(exec_ctx.symbol_table.get('value'))
       try:
         number = int(text)
         break
       except ValueError:
         print(f"'{text}' must be an integer. Try again!")
     return RTResult().success(Number(number))
-  execute_input_int.arg_names = []
+  execute_print_ret.arg_names = ['value']
 
   def execute_clear(self, exec_ctx):
     os.system('cls' if os.name == 'nt' else 'cls') 
@@ -2075,6 +2088,13 @@ class Interpreter:
     value = res.register(self.visit(node.expr_node, context))
     if res.should_return(): return res
     print(value) 
+    return res.success(value)
+  
+  def visit_InputNode(self, node, context):
+    res = RTResult()
+    value = res.register(self.visit(node.expr_node, context))
+    if res.should_return(): return res
+    input(value) 
     return res.success(value)
 
   def visit_NumberNode(self, node, context):
