@@ -1,5 +1,5 @@
-for I = 0 to 2 then 
-    INPUT = int(input("Number: "))
+loop COUNT from 0 to 7 then 
+    INPUT = input("Number: ")
     output INPUT
-    output INPUT % 2
-end
+    output INPUT % 9
+end loop

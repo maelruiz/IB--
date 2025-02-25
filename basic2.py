@@ -373,8 +373,8 @@ class Lexer:
 # NODES
 #######################################
 class OutputNode:
-    def __init__(self, expr_node, pos_start, pos_end):
-        self.expr_node = expr_node
+    def __init__(self, expr_nodes, pos_start, pos_end):
+        self.expr_nodes = expr_nodes
         self.pos_start = pos_start
         self.pos_end = pos_end
 
@@ -708,12 +708,20 @@ class Parser:
             self.reverse()
     
     if self.current_tok.matches(TT_KEYWORD, 'output'):
-        res.register_advancement()
-        self.advance()
-        expr = res.register(self.expr())
-        if res.error: return res
-        return res.success(OutputNode(expr, self.current_tok.pos_start, self.current_tok.pos_start.copy()))
-    
+      res.register_advancement()
+      self.advance()
+      pos_start = self.current_tok.pos_start.copy()
+      expr_nodes = [res.register(self.expr())]
+      if res.error: return res
+
+      while self.current_tok.type == TT_COMMA:
+          res.register_advancement()
+          self.advance()
+          expr_nodes.append(res.register(self.expr()))
+          if res.error: return res
+
+      return res.success(OutputNode(expr_nodes, pos_start, self.current_tok.pos_start.copy()))
+      
     if self.current_tok.matches(TT_KEYWORD, 'input'):
         res.register_advancement()
         self.advance()
@@ -1870,19 +1878,9 @@ class BuiltInFunction(BaseFunction):
   
   def execute_input(self, exec_ctx):
     text = input(exec_ctx.symbol_table.get('value'))
+    if text.isnumeric(): return RTResult().success(Number(int(text)))
     return RTResult().success(String(text))
   execute_input.arg_names = ['value']
-
-  def execute_input_int(self, exec_ctx):
-    while True:
-      text = input(exec_ctx.symbol_table.get('value'))
-      try:
-        number = int(text)
-        break
-      except ValueError:
-        print(f"'{text}' must be an integer. Try again!")
-    return RTResult().success(Number(number))
-  execute_print_ret.arg_names = ['value']
 
   def execute_clear(self, exec_ctx):
     os.system('cls' if os.name == 'nt' else 'cls') 
@@ -2028,13 +2026,12 @@ class BuiltInFunction(BaseFunction):
   execute_str.arg_names = ["value"]
 
   def execute_int(self, exec_ctx):
-    return RTResult().success(Number(int(exec_ctx.symbol_table.get("value"))))
+    return RTResult().success(Number(int(str(exec_ctx.symbol_table.get("value")))))
   execute_int.arg_names = ["value"]
 
 BuiltInFunction.print       = BuiltInFunction("print")
 BuiltInFunction.print_ret   = BuiltInFunction("print_ret")
 BuiltInFunction.input       = BuiltInFunction("input")
-BuiltInFunction.input_int   = BuiltInFunction("input_int")
 BuiltInFunction.clear       = BuiltInFunction("clear")
 BuiltInFunction.is_number   = BuiltInFunction("is_number")
 BuiltInFunction.is_string   = BuiltInFunction("is_string")
@@ -2101,10 +2098,16 @@ class Interpreter:
   
   def visit_OutputNode(self, node, context):
     res = RTResult()
-    value = res.register(self.visit(node.expr_node, context))
-    if res.should_return(): return res
-    print(value) 
-    return res.success(value)
+    values = []
+
+    for expr_node in node.expr_nodes:
+        value = res.register(self.visit(expr_node, context))
+        if res.should_return(): return res
+        values.append(value)
+
+    # Join values as strings with a space separator and print them
+    print(" ".join(map(str, values)))
+    return res.success(Number.null)
   
   def visit_InputNode(self, node, context):
     res = RTResult()
@@ -2399,7 +2402,6 @@ global_symbol_table.set("math_PI", Number.math_PI)
 global_symbol_table.set("print", BuiltInFunction.print)
 global_symbol_table.set("print_ret", BuiltInFunction.print_ret)
 global_symbol_table.set("input", BuiltInFunction.input)
-global_symbol_table.set("input_int", BuiltInFunction.input_int)
 global_symbol_table.set("clear", BuiltInFunction.clear)
 global_symbol_table.set("cls", BuiltInFunction.clear)
 global_symbol_table.set("is_number", BuiltInFunction.is_number)
