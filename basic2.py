@@ -124,6 +124,7 @@ TT_COMMA      = 'COMMA'
 TT_ARROW      = 'ARROW'
 TT_NEWLINE    = 'NEWLINE'
 TT_EOF        = 'EOF'
+TT_MOD        = 'MOD'
 
 KEYWORDS = [
   'and',
@@ -144,7 +145,7 @@ KEYWORDS = [
   'break',
   'loop',
   'from',
-  'output'
+  'output',
 ]
 
 class Token:
@@ -216,6 +217,9 @@ class Lexer:
         self.advance()
       elif self.current_char == '(':
         tokens.append(Token(TT_LPAREN, pos_start=self.pos))
+        self.advance()
+      elif self.current_char == '%':
+        tokens.append(Token(TT_MOD, pos_start=self.pos))
         self.advance()
       elif self.current_char == ')':
         tokens.append(Token(TT_RPAREN, pos_start=self.pos))
@@ -753,8 +757,8 @@ class Parser:
     return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
 
   def term(self):
-    return self.bin_op(self.factor, (TT_MUL, TT_DIV))
-
+    return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_MOD))
+  
   def factor(self):
     res = ParseResult()
     tok = self.current_tok
@@ -1583,6 +1587,12 @@ class Number(Value):
     else:
       return None, Value.illegal_operation(self, other)
 
+  def modded_by(self, other):
+    if isinstance(other, Number):
+      return Number(self.value % other.value).set_context(self.context), None
+    else:
+      return None, Value.illegal_operation(self, other)
+
   def get_comparison_eq(self, other):
     if isinstance(other, Number):
       return Number(int(self.value == other.value)).set_context(self.context), None
@@ -2017,6 +2027,10 @@ class BuiltInFunction(BaseFunction):
     return RTResult().success(String(str(exec_ctx.symbol_table.get("value"))))
   execute_str.arg_names = ["value"]
 
+  def execute_int(self, exec_ctx):
+    return RTResult().success(Number(int(exec_ctx.symbol_table.get("value"))))
+  execute_int.arg_names = ["value"]
+
 BuiltInFunction.print       = BuiltInFunction("print")
 BuiltInFunction.print_ret   = BuiltInFunction("print_ret")
 BuiltInFunction.input       = BuiltInFunction("input")
@@ -2032,6 +2046,7 @@ BuiltInFunction.extend      = BuiltInFunction("extend")
 BuiltInFunction.len					= BuiltInFunction("len")
 BuiltInFunction.run					= BuiltInFunction("run")
 BuiltInFunction.str					= BuiltInFunction("str")
+BuiltInFunction.int         = BuiltInFunction("int")
 
 #######################################
 # CONTEXT
@@ -2083,6 +2098,7 @@ class Interpreter:
       return self.visit_LoopNode(node, context)
 
   ###################################
+  
   def visit_OutputNode(self, node, context):
     res = RTResult()
     value = res.register(self.visit(node.expr_node, context))
@@ -2182,10 +2198,6 @@ class Interpreter:
     right = res.register(self.visit(node.right_node, context))
     if res.should_return(): return res
 
-#######
-#HAVE TO FIX ACCESSING LISTS
-#######
-
     if node.op_tok.type == TT_PLUS:
       result, error = left.added_to(right)
     elif node.op_tok.type == TT_MINUS:
@@ -2208,10 +2220,13 @@ class Interpreter:
       result, error = left.get_comparison_lte(right)
     elif node.op_tok.type == TT_GTE:
       result, error = left.get_comparison_gte(right)
+    elif node.op_tok.type == TT_MOD:
+      result, error = left.modded_by(right)
     elif node.op_tok.matches(TT_KEYWORD, 'and'):
       result, error = left.anded_by(right)
     elif node.op_tok.matches(TT_KEYWORD, 'or'):
       result, error = left.ored_by(right)
+    
 
     if error:
       return res.failure(error)
@@ -2397,6 +2412,7 @@ global_symbol_table.set("extend", BuiltInFunction.extend)
 global_symbol_table.set("len", BuiltInFunction.len)
 global_symbol_table.set("run", BuiltInFunction.run)
 global_symbol_table.set("str", BuiltInFunction.str)
+global_symbol_table.set("int", BuiltInFunction.int)
 
 def run(fn, text):
   # Generate tokens
