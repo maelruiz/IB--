@@ -411,6 +411,13 @@ class ListNode:
     self.pos_start = pos_start
     self.pos_end = pos_end
 
+class ListAccessNode:
+    def __init__(self, var_node, index_node):
+        self.var_node = var_node
+        self.index_node = index_node
+
+        self.pos_start = var_node.pos_start
+        self.pos_end = index_node.pos_end
 
 class VarAccessNode:
   def __init__(self, var_name_tok):
@@ -827,70 +834,82 @@ class Parser:
     tok = self.current_tok
 
     if tok.type in (TT_INT, TT_FLOAT):
-      res.register_advancement()
-      self.advance()
-      return res.success(NumberNode(tok))
-
-    elif tok.type == TT_STRING:
-      res.register_advancement()
-      self.advance()
-      return res.success(StringNode(tok))
-
-    elif tok.type == TT_IDENTIFIER:
-      res.register_advancement()
-      self.advance()
-      return res.success(VarAccessNode(tok))
-
-    elif tok.type == TT_LPAREN:
-      res.register_advancement()
-      self.advance()
-      expr = res.register(self.expr())
-      if res.error: return res
-      if self.current_tok.type == TT_RPAREN:
         res.register_advancement()
         self.advance()
-        return res.success(expr)
-      else:
-        return res.failure(InvalidSyntaxError(
-          self.current_tok.pos_start, self.current_tok.pos_end,
-          "Expected ')'"
-        ))
+        return res.success(NumberNode(tok))
+
+    elif tok.type == TT_STRING:
+        res.register_advancement()
+        self.advance()
+        return res.success(StringNode(tok))
+
+    elif tok.type == TT_IDENTIFIER:
+        res.register_advancement()
+        self.advance()
+        node = VarAccessNode(tok)
+
+        if self.current_tok.type == TT_LSQUARE:
+            res.register_advancement()
+            self.advance()
+            index = res.register(self.expr())
+            if res.error: return res
+
+            if self.current_tok.type != TT_RSQUARE:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected ']'"
+                ))
+
+            res.register_advancement()
+            self.advance()
+            return res.success(ListAccessNode(node, index))
+
+        return res.success(node)
+
+    elif tok.type == TT_LPAREN:
+        res.register_advancement()
+        self.advance()
+        expr = res.register(self.expr())
+        if res.error: return res
+        if self.current_tok.type == TT_RPAREN:
+            res.register_advancement()
+            self.advance()
+            return res.success(expr)
+        else:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected ')'"
+            ))
 
     elif tok.type == TT_LSQUARE:
-      list_expr = res.register(self.list_expr())
-      if res.error: return res
-      return res.success(list_expr)
-    
+        list_expr = res.register(self.list_expr())
+        if res.error: return res
+        return res.success(list_expr)
+
     elif tok.matches(TT_KEYWORD, 'if'):
-      if_expr = res.register(self.if_expr())
-      if res.error: return res
-      return res.success(if_expr)
+        if_expr = res.register(self.if_expr())
+        if res.error: return res
+        return res.success(if_expr)
 
     elif tok.matches(TT_KEYWORD, 'for'):
-      for_expr = res.register(self.for_expr())
-      if res.error: return res
-      return res.success(for_expr)
-    
-    elif tok.matches(TT_KEYWORD, 'loop'):
-      loop_expr = res.register(self.loop_expr())
-      if res.error: return res
-      return res.success(loop_expr)
+        for_expr = res.register(self.for_expr())
+        if res.error: return res
+        return res.success(for_expr)
 
     elif tok.matches(TT_KEYWORD, 'while'):
-      while_expr = res.register(self.while_expr())
-      if res.error: return res
-      return res.success(while_expr)
+        while_expr = res.register(self.while_expr())
+        if res.error: return res
+        return res.success(while_expr)
 
     elif tok.matches(TT_KEYWORD, 'fun'):
-      func_def = res.register(self.func_def())
-      if res.error: return res
-      return res.success(func_def)
+        func_def = res.register(self.func_def())
+        if res.error: return res
+        return res.success(func_def)
 
     return res.failure(InvalidSyntaxError(
-      tok.pos_start, tok.pos_end,
-      "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'WHILE', 'FUN'"
+        tok.pos_start, tok.pos_end,
+        "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'WHILE', 'FUN'"
     ))
-
   def list_expr(self):
     res = ParseResult()
     element_nodes = []
@@ -2138,6 +2157,36 @@ class Interpreter:
       List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
     )
 
+  def visit_ListAccessNode(self, node, context):
+    res = RTResult()
+    list_value = res.register(self.visit(node.var_node, context))
+    if res.should_return(): return res
+
+    index = res.register(self.visit(node.index_node, context))
+    if res.should_return(): return res
+
+    if not isinstance(list_value, List):
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            "Expected list",
+            context
+        ))
+
+    if not isinstance(index, Number):
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            "List index must be a number",
+            context
+        ))
+
+    try:
+        return res.success(list_value.elements[index.value])
+    except IndexError:
+        return res.failure(RTError(
+            node.pos_start, node.pos_end,
+            "List index out of range",
+            context
+        ))
   def visit_LoopNode(self, node, context):
     res = RTResult()
     elements = []
