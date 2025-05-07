@@ -2,35 +2,34 @@ NUMBERS = [1, 2, 3, 4, 5, 6]
 
 if len(NUMBERS) == 0 then
     print("List is empty")
-end
+end if
 
-for I = 0 to len(NUMBERS) then
+loop I from 0 to len(NUMBERS)
     print(NUMBERS[I])
-end
-
+end loop
 
 if len(NUMBERS) == 0 then
     return "List is empty"
-end
+end if
 
 MIN_VAL = NUMBERS[0]
 output MIN_VAL
 MAX_VAL = NUMBERS[0]
 output MAX_VAL
 
-for I = 0 to len(NUMBERS) then 
+loop I from 0 to len(NUMBERS) 
     if NUMBERS[I] < MIN_VAL then
         MIN_VAL = NUMBERS[I]
-    end
+    end if 
     if NUMBERS[I] > MAX_VAL then
         MAX_VAL = NUMBERS[I]
-    end
-end
+    end if 
+end loop
 
-print("Min: " + str(MIN_VAL) + ", Max: " + str(MAX_VAL))
+output "Min: ", str(MIN_VAL) , ", Max: " , str(MAX_VAL)
 
-fun add(a, b)
+method add(a, b)
     return a + b
-end 
+end method
 
 output add(1, 2)

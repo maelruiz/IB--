@@ -125,6 +125,7 @@ TT_ARROW      = 'ARROW'
 TT_NEWLINE    = 'NEWLINE'
 TT_EOF        = 'EOF'
 TT_MOD        = 'MOD'
+TT_DOT        = 'DOT'
 
 KEYWORDS = [
   'and',
@@ -133,11 +134,10 @@ KEYWORDS = [
   'if',
   'elif',
   'else',
-  'for',
   'to',
   'step',
   'while',
-  'fun', 
+  'method', 
   'then',
   'end',
   'return',
@@ -229,6 +229,9 @@ class Lexer:
         self.advance()
       elif self.current_char == ']':
         tokens.append(Token(TT_RSQUARE, pos_start=self.pos))
+        self.advance()
+      elif self.current_char == '.': 
+        tokens.append(Token(TT_DOT, pos_start=self.pos))
         self.advance()
       elif self.current_char == '!':
         token, error = self.make_not_equals()
@@ -465,17 +468,6 @@ class IfNode:
     self.pos_start = self.cases[0][0].pos_start
     self.pos_end = (self.else_case or self.cases[len(self.cases) - 1])[0].pos_end
 
-class ForNode:
-  def __init__(self, var_name_tok, start_value_node, end_value_node, step_value_node, body_node, should_return_null):
-    self.var_name_tok = var_name_tok
-    self.start_value_node = start_value_node
-    self.end_value_node = end_value_node
-    self.step_value_node = step_value_node
-    self.body_node = body_node
-    self.should_return_null = should_return_null
-
-    self.pos_start = self.var_name_tok.pos_start
-    self.pos_end = self.body_node.pos_end
 
 class LoopNode:
     def __init__(self, var_name_tok, start_value_node, end_value_node, body_node, should_return_null):
@@ -541,6 +533,18 @@ class BreakNode:
   def __init__(self, pos_start, pos_end):
     self.pos_start = pos_start
     self.pos_end = pos_end
+
+class MethodCallNode:
+  def __init__(self, object_node, method_name, arg_nodes):
+    self.object_node = object_node
+    self.method_name = method_name
+    self.arg_nodes = arg_nodes
+
+    self.pos_start = self.object_node.pos_start
+    if len(self.arg_nodes) > 0:
+      self.pos_end = self.arg_nodes[len(self.arg_nodes) - 1].pos_end
+    else:
+      self.pos_end = self.method_name.pos_end
 
 #######################################
 # PARSE RESULT
@@ -664,7 +668,7 @@ class Parser:
       if not expr:
         self.reverse(res.to_reverse_count)
       return res.success(ReturnNode(expr, pos_start, self.current_tok.pos_start.copy()))
-    
+
     if self.current_tok.matches(TT_KEYWORD, 'continue'):
       res.register_advancement()
       self.advance()
@@ -679,7 +683,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+        "Expected 'RETURN', 'CONTINUE', 'BREAK', 'VAR', 'IF', 'FOR', 'WHILE', 'METHOD', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
       ))
     return res.success(expr)
 
@@ -709,7 +713,7 @@ class Parser:
                 ))
             res.register_advancement()
             self.advance()
-            return res.success(BinOpNode(var_name, TT_DIV, expr))
+            return res.success(ListAccessNode(VarAccessNode(var_name), expr))
                         
         else:
             self.reverse()
@@ -763,7 +767,7 @@ class Parser:
     if res.error:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        "Expected int, float, identifier, '+', '-', '(', '[', 'IF', 'FOR', 'WHILE', 'FUN' or 'NOT'"
+        "Expected int, float, identifier, '+', '-', '(', '[', 'IF', 'FOR', 'WHILE', 'METHOD' or 'NOT'"
       ))
 
     return res.success(node)
@@ -827,6 +831,63 @@ class Parser:
         res.register_advancement()
         self.advance()
       return res.success(CallNode(atom, arg_nodes))
+    
+        
+    if self.current_tok.type == TT_DOT:
+      res.register_advancement()
+      self.advance()
+      
+      if self.current_tok.type != TT_IDENTIFIER:
+        return res.failure(InvalidSyntaxError(
+          self.current_tok.pos_start, self.current_tok.pos_end,
+          "Expected identifier after '.'"
+        ))
+        
+      method_name = self.current_tok
+      res.register_advancement()
+      self.advance()
+      
+      # Handle method arguments
+      if self.current_tok.type != TT_LPAREN:
+        return res.failure(InvalidSyntaxError(
+          self.current_tok.pos_start, self.current_tok.pos_end,
+          "Expected '(' after method name"
+        ))
+        
+      res.register_advancement()
+      self.advance()
+      arg_nodes = []
+      
+      if self.current_tok.type == TT_RPAREN:
+        res.register_advancement()
+        self.advance()
+      else:
+        arg_nodes.append(res.register(self.expr()))
+        if res.error:
+          return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.current_tok.pos_end,
+            "Expected ')', expression"
+          ))
+          
+        while self.current_tok.type == TT_COMMA:
+          res.register_advancement()
+          self.advance()
+          
+          arg_nodes.append(res.register(self.expr()))
+          if res.error: return res
+          
+        if self.current_tok.type != TT_RPAREN:
+          return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.current_tok.pos_end,
+            "Expected ',' or ')'"
+          ))
+          
+        res.register_advancement()
+        self.advance()
+        
+      # Return method call node
+      return res.success(MethodCallNode(atom, method_name, arg_nodes))
+      
     return res.success(atom)
 
   def atom(self):
@@ -891,17 +952,18 @@ class Parser:
         if res.error: return res
         return res.success(if_expr)
 
-    elif tok.matches(TT_KEYWORD, 'for'):
-        for_expr = res.register(self.for_expr())
-        if res.error: return res
-        return res.success(for_expr)
 
     elif tok.matches(TT_KEYWORD, 'while'):
         while_expr = res.register(self.while_expr())
         if res.error: return res
         return res.success(while_expr)
+    
+    elif tok.matches(TT_KEYWORD, 'loop'):
+        loop_expr = res.register(self.loop_expr())
+        if res.error: return res
+        return res.success(loop_expr)
 
-    elif tok.matches(TT_KEYWORD, 'fun'):
+    elif tok.matches(TT_KEYWORD, 'method'):
         func_def = res.register(self.func_def())
         if res.error: return res
         return res.success(func_def)
@@ -1048,6 +1110,10 @@ class Parser:
       if self.current_tok.matches(TT_KEYWORD, 'end'):
         res.register_advancement()
         self.advance()
+
+        if self.current_tok.matches(TT_KEYWORD, 'if'):
+          res.register_advancement()
+          self.advance()
       else:
         all_cases = res.register(self.if_expr_b_or_c())
         if res.error: return res
@@ -1065,140 +1131,7 @@ class Parser:
 
     return res.success((cases, else_case))
 
-  def for_expr(self):
-    res = ParseResult()
-
-    if not self.current_tok.matches(TT_KEYWORD, 'for'):
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'FOR'"
-      ))
-
-    res.register_advancement()
-    self.advance()
-
-    if self.current_tok.type != TT_IDENTIFIER:
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected identifier"
-      ))
-
-    var_name = self.current_tok
-    res.register_advancement()
-    self.advance()
-
-    if self.current_tok.type != TT_EQ:
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected '='"
-      ))
-    
-    res.register_advancement()
-    self.advance()
-
-    start_value = res.register(self.expr())
-    if res.error: return res
-
-    if not self.current_tok.matches(TT_KEYWORD, 'to'):
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'TO'"
-      ))
-    
-    res.register_advancement()
-    self.advance()
-
-    end_value = res.register(self.expr())
-    if res.error: return res
-
-    if self.current_tok.matches(TT_KEYWORD, 'step'):
-      res.register_advancement()
-      self.advance()
-
-      step_value = res.register(self.expr())
-      if res.error: return res
-    else:
-      step_value = None
-
-    if not self.current_tok.matches(TT_KEYWORD, 'then'):
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'THEN'"
-      ))
-
-    res.register_advancement()
-    self.advance()
-
-    if self.current_tok.type == TT_NEWLINE:
-      res.register_advancement()
-      self.advance()
-
-      body = res.register(self.statements())
-      if res.error: return res
-
-      if not self.current_tok.matches(TT_KEYWORD, 'end'):
-        return res.failure(InvalidSyntaxError(
-          self.current_tok.pos_start, self.current_tok.pos_end,
-          f"Expected 'END'"
-        ))
-
-      res.register_advancement()
-      self.advance()
-
-      return res.success(ForNode(var_name, start_value, end_value, step_value, body, True))
-    
-    body = res.register(self.statement())
-    if res.error: return res
-
-    return res.success(ForNode(var_name, start_value, end_value, step_value, body, False))
-
-  def while_expr(self):
-    res = ParseResult()
-
-    if not self.current_tok.matches(TT_KEYWORD, 'while'):
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'WHILE'"
-      ))
-
-    res.register_advancement()
-    self.advance()
-
-    condition = res.register(self.expr())
-    if res.error: return res
-
-    if not self.current_tok.matches(TT_KEYWORD, 'then'):
-      return res.failure(InvalidSyntaxError(
-        self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'THEN'"
-      ))
-
-    res.register_advancement()
-    self.advance()
-
-    if self.current_tok.type == TT_NEWLINE:
-      res.register_advancement()
-      self.advance()
-
-      body = res.register(self.statements())
-      if res.error: return res
-
-      if not self.current_tok.matches(TT_KEYWORD, 'end'):
-        return res.failure(InvalidSyntaxError(
-          self.current_tok.pos_start, self.current_tok.pos_end,
-          f"Expected 'END'"
-        ))
-
-      res.register_advancement()
-      self.advance()
-
-      return res.success(WhileNode(condition, body, True))
-    
-    body = res.register(self.statement())
-    if res.error: return res
-
-    return res.success(WhileNode(condition, body, False))
-
+  
   def loop_expr(self):
     res = ParseResult()
 
@@ -1328,7 +1261,7 @@ class Parser:
   def func_def(self):
     res = ParseResult()
 
-    if not self.current_tok.matches(TT_KEYWORD, 'fun'):
+    if not self.current_tok.matches(TT_KEYWORD, 'method'):
         return res.failure(InvalidSyntaxError(
             self.current_tok.pos_start, self.current_tok.pos_end,
             f"Expected 'fun'"
@@ -1410,6 +1343,15 @@ class Parser:
             f"Expected 'END'"
         ))
 
+    res.register_advancement()
+    self.advance()
+
+    if not self.current_tok.matches(TT_KEYWORD, 'method'):
+      return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.current_tok.pos_end,
+            f"Expected 'method' after 'end'"
+        ))
+    
     res.register_advancement()
     self.advance()
 
@@ -1513,6 +1455,9 @@ class Value:
     self.context = context
     return self
 
+  def call_method(self, method_name, args):
+    return None, self.illegal_operation()
+
   def added_to(self, other):
     return None, self.illegal_operation(other)
 
@@ -1576,6 +1521,16 @@ class Number(Value):
   def __init__(self, value):
     super().__init__()
     self.value = value
+
+  def call_method(self, method_name, args):
+    if method_name == "to_string":
+      return String(str(self.value)).set_context(self.context), None
+    
+    return None, RTError(
+      None, None,
+      f"Number has no method '{method_name}'",
+      self.context
+    )
 
   def added_to(self, other):
     if isinstance(other, Number):
@@ -1696,6 +1651,27 @@ class String(Value):
     super().__init__()
     self.value = value
 
+  def call_method(self, method_name, args):
+    if method_name == "length":
+      return Number(len(self.value)).set_context(self.context), None
+    elif method_name == "upper":
+      return String(self.value.upper()).set_context(self.context), None
+    elif method_name == "lower":
+      return String(self.value.lower()).set_context(self.context), None
+    elif method_name == "split":
+      if len(args) > 0 and isinstance(args[0], String):
+        parts = self.value.split(args[0].value)
+        return List([String(part).set_context(self.context) for part in parts]).set_context(self.context), None
+      else:
+        parts = self.value.split()
+        return List([String(part).set_context(self.context) for part in parts]).set_context(self.context), None
+    
+    return None, RTError(
+      None, None,
+      f"String has no method '{method_name}'",
+      self.context
+    )
+
   def added_to(self, other):
     if isinstance(other, String):
       return String(self.value + other.value).set_context(self.context), None
@@ -1727,6 +1703,45 @@ class List(Value):
   def __init__(self, elements):
     super().__init__()
     self.elements = elements
+
+  def call_method(self, method_name, args):
+    if method_name == "length":
+      return Number(len(self.elements)).set_context(self.context), None
+    elif method_name == "append":
+      if len(args) < 1:
+        return None, RTError(
+          None, None,
+          "append() takes at least 1 argument",
+          self.context
+        )
+      self.elements.append(args[0])
+      return Number.null, None
+    elif method_name == "pop":
+      if len(self.elements) == 0:
+        return None, RTError(
+          None, None,
+          "Cannot pop from empty list",
+          self.context
+        )
+      if len(args) > 0 and isinstance(args[0], Number):
+        try:
+          index = int(args[0].value)
+          element = self.elements.pop(index)
+          return element, None
+        except:
+          return None, RTError(
+            None, None,
+            "Invalid index for pop()",
+            self.context
+          )
+      else:
+        return self.elements.pop(), None
+    
+    return None, RTError(
+      None, None,
+      f"List has no method '{method_name}'",
+      self.context
+    )
 
   def added_to(self, other):
     new_list = self.copy()
@@ -2110,8 +2125,59 @@ class Interpreter:
   def no_visit_method(self, node, context):
       raise Exception(f'No visit_{type(node).__name__} method defined')
 
+  def visit_MethodCallNode(self, node, context):
+    res = RTResult()
+    
+    # Get the object
+    obj = res.register(self.visit(node.object_node, context))
+    if res.should_return(): return res
+    
+    # Prepare method arguments
+    args = []
+    for arg_node in node.arg_nodes:
+      args.append(res.register(self.visit(arg_node, context)))
+      if res.should_return(): return res
+    
+    # Call the method on the object
+    method_name = node.method_name.value
+    result, error = obj.call_method(method_name, args)
+    
+    if error:
+      return res.failure(error)
+    
+    return res.success(result.set_pos(node.pos_start, node.pos_end).set_context(context))
+
   def visit_LoopNode(self, node, context):
-      return self.visit_LoopNode(node, context)
+    res = RTResult()
+    elements = []
+
+    start_value = res.register(self.visit(node.start_value_node, context))
+    if res.should_return(): return res
+
+    end_value = res.register(self.visit(node.end_value_node, context))
+    if res.should_return(): return res
+
+    i = start_value.value
+
+    while i < end_value.value:
+        context.symbol_table.set(node.var_name_tok.value, Number(i))
+        i += 1
+
+        value = res.register(self.visit(node.body_node, context))
+        if res.should_return() and res.loop_should_continue == False and res.loop_should_break == False: return res
+
+        if res.loop_should_continue:
+            continue
+
+        if res.loop_should_break:
+            break
+
+        elements.append(value)
+
+    return res.success(
+        Number.null if node.should_return_null else
+        List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+    )
 
   ###################################
   

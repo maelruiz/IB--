@@ -1,4 +1,0 @@
-- Change end to be specific to each loop type or if statement
-- Change from to loop to not use "then"
-- .length change from len() 
-- Change fun to method ____ // end method
