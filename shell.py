@@ -22,11 +22,16 @@ def collect_input():
 
         for l in text_lines:
             # Detect block opening
-            if re.search(r'\b(if|loop|for|while|method)\b', l) and 'end' not in l:
+            if re.search(r'\b(if|loop|for|while|method)\b', l) and not re.search(r'\bend\b', l):
                 block_level += 1
 
-            # Detect block closing with 'end' keyword
-            if 'end' in l:
+            # Detect continuation of if block with elif or else
+            elif re.search(r'\b(elif|else)\b', l) and not re.search(r'\bend\b', l):
+                # These don't increase the block level as they're part of an existing if
+                pass
+
+            # Detect block closing with 'end' keyword (possibly followed by the block type)
+            if re.search(r'\bend\b', l):
                 block_level -= 1
         
         # If all blocks are closed, we can execute
@@ -56,4 +61,14 @@ while True:
         break
     except Exception as e:
         print(f"Shell error: {e}")
+
+
+
+        print(f"Shell error: {e}")
+
+
+
+
+
+
 

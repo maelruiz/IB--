@@ -370,7 +370,7 @@ class Lexer:
     while self.current_char != '\n':
       self.advance()
 
-    self.advance()
+
 
 #######################################
 # NODES
@@ -1052,6 +1052,9 @@ class Parser:
             self.current_tok.pos_start, self.current_tok.pos_end,
             "Expected 'END'"
           ))
+        if self.current_tok.matches(TT_KEYWORD, 'if'):
+          res.register_advancement()
+          self.advance()
       else:
         expr = res.register(self.statement())
         if res.error: return res

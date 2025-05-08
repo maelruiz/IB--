@@ -1,15 +1,26 @@
-method add(A, B) 
-    loop COUNT from 0 to 7  
-        INPUT = input("Number: ")
-        output INPUT
-        output INPUT % 9
-    end loop
-end method
+USCR = 0
+CSCR = 0
+DONE = false
 
-NUMBERS = [1,2,3,4,5,6,7,8,9,10]
-output NUMBERS[1]
-
-loop COUNT from 0 to 7  
-    output COUNT
+loop while DONE == false
+    C = 2
+    output "Enter your choice: 1 = Rock, 2 = Paper, 3 = Scissors"
+    input U
+    if U == C then
+        output "It's a tie!"
+    else if (U == 1 and C == 3) or (U == 2 and C == 1) or (U == 3 and C == 2) then
+        output "You win this round!"
+        USCR = USCR + 1
+    else
+        output "Computer wins this round!"
+        CSCR = CSCR + 1
+    end if
+    output "Score - You: ", USCR, " Computer: ", CSCR
+    if USCR == 3 then
+        output "Congratulations! You won the game!"
+        DONE = true
+    else if CSCR == 3 then
+        output "Computer wins the game. Better luck next time!"
+        DONE = true
+    end if
 end loop
-output add(1, 2)

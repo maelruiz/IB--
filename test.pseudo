@@ -3,7 +3,7 @@
 # Test variable assignment and arithmetic operations
 output "=== Testing variable assignment and arithmetic ==="
 NUM = 10
-output "NUM =", NUM
+output "NUM =", NUM 
 
 OUTPUT = NUM + 5
 output "NUM + 5 =", OUTPUT
@@ -124,12 +124,12 @@ LIST.append(6)
 output "After append(6):", LIST
 
 # Test list pop
-POPPED = LIST.pop()
+POPPED = LIST.pop() # remove last element
 output "Popped value:", POPPED
 output "After pop():", LIST
 
 # Test list with method
-LIST.pop(2) # Remove element at index 2
+LIST.pop(2)
 output "After pop(2):", LIST
 
 # Test functions
@@ -141,10 +141,10 @@ end method
 output "add(5, 3) =", add(5, 3)
 
 # Test function with multiple statements
-method calculate(x)
-    y = x * 2
-    z = y + 10
-    return z
+method calculate(X)
+    Y = X * 2
+    Z = Y + 10
+    return Z
 end method
 
 output "calculate(5) =", calculate(5)
