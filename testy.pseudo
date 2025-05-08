@@ -2,10 +2,11 @@ USCR = 0
 CSCR = 0
 DONE = false
 
-loop while DONE == false
+loop while DONE == false 
     C = 2
     output "Enter your choice: 1 = Rock, 2 = Paper, 3 = Scissors"
     input U
+    U = int(U)
     if U == C then
         output "It's a tie!"
     else if (U == 1 and C == 3) or (U == 2 and C == 1) or (U == 3 and C == 2) then

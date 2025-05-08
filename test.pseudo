@@ -59,37 +59,37 @@ if X == 15 then output "X equals 15!"
 # Test loop from...to
 output "=== Testing loop from...to ==="
 output "Counting from 1 to 5:"
-loop i from 1 to 6 then
-    output i
+loop I from 1 to 6 then
+    output I
 end loop
 
 # Test loop with list collection
 output "Creating a list with loop:"
-NUMBERS = loop i from 1 to 6 then
-    i * i
+NUMBERS = loop I from 1 to 6 then
+    I * I
 end loop
 output NUMBERS
 
 # Test while loop
 output "=== Testing while loop ==="
 COUNT = 0
-loop while COUNT < 5 then
+loop while COUNT < 5 
     output "While loop count:", COUNT
     COUNT = COUNT + 1
 end loop
 
 # Test break and continue
 output "=== Testing break and continue ==="
-loop i from 0 to 10 then
-    if i == 3 then
+loop I from 0 to 10 
+    if I == 3 then
         output "Skipping 3"
         continue
     end if
-    if i == 7 then
+    if I == 7 then
         output "Breaking at 7"
         break
     end if
-    output "Loop value:", i
+    output "Loop value:", I
 end loop
 
 # Test string operations

@@ -18,7 +18,7 @@ MAX_VAL = NUMBERS[0]
 output MAX_VAL
 
 loop I from 0 to len(NUMBERS) 
-    if NUMBERS[I] < MIN_VAL then
+    if NUMBERS[I] < MIN_VAL then 
         MIN_VAL = NUMBERS[I]
     end if 
     if NUMBERS[I] > MAX_VAL then
@@ -33,3 +33,9 @@ method add(a, b)
 end method
 
 output add(1, 2)
+
+method subtract(a, b)
+    return a - b
+end method
+
+output subtract(1, 2)
