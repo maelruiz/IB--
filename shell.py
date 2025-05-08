@@ -25,7 +25,7 @@ def collect_input():
 
             for l in text_lines:
                 # Detect block opening
-                if re.search(r'\b(if|loop|for|while|method)\b', l) and not re.search(r'\bend\b', l):
+                if re.search(r'\b(if|loop|while|method)\b', l) and not re.search(r'\bend\b', l):
                     block_level += 1
 
                 # Detect continuation of if block with elif or else

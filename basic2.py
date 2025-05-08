@@ -975,7 +975,7 @@ class Parser:
 
     return res.failure(InvalidSyntaxError(
         tok.pos_start, tok.pos_end,
-        "Expected int, float, identifier, '+', '-', '(', '[', IF', 'FOR', 'WHILE', 'FUN'"
+        "Expected int, float, identifier, '+', '-', '(', '[', IF', 'WHILE', 'FUN'"
     ))
   def list_expr(self):
     res = ParseResult()
@@ -998,7 +998,7 @@ class Parser:
       if res.error:
         return res.failure(InvalidSyntaxError(
           self.current_tok.pos_start, self.current_tok.pos_end,
-          "Expected ']', 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
+          "Expected ']', 'VAR', 'IF', 'WHILE', 'FUN', int, float, identifier, '+', '-', '(', '[' or 'NOT'"
         ))
 
       while self.current_tok.type == TT_COMMA:
