@@ -1,7 +1,0 @@
-{
-    "name": "dateutils",
-    "version": "1.0.0",
-    "entry": "dateutils.pseudo",
-    "description": "Date utility functions",
-    "files": ["dateutils.pseudo"]
-  }

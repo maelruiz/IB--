@@ -166,7 +166,6 @@ KEYWORDS = [
   'new',
   'div',
   'mod',
-  'import',
 ]
 
 class Token:
@@ -413,12 +412,6 @@ class InputNode:
         self.expr_node = expr_node
         self.pos_start = pos_start
         self.pos_end = pos_end
-
-class ImportNode:
-    def __init__(self, package_name):
-        self.package_name = package_name
-        self.pos_start = None
-        self.pos_end = None
 
 class NumberNode:
   def __init__(self, tok):
@@ -711,19 +704,7 @@ class Parser:
       res.register_advancement()
       self.advance()
       return res.success(BreakNode(pos_start, self.current_tok.pos_start.copy()))
-    
-    if self.current_tok.matches(TT_KEYWORD, "import"):
-      self.advance()
-      if self.current_tok.type == TT_STRING:
-          pkg_name = self.current_tok.value
-          self.advance()
-          return ImportNode(pkg_name)
-    else:
-        return InvalidSyntaxError(
-            self.current_tok.pos_start, self.current_tok.pos_end,
-            "Expected package name string after 'import'"
-        )
-    
+
     if self.current_tok.matches(TT_KEYWORD, 'input'):
             res.register_advancement()
             self.advance()
@@ -2305,8 +2286,7 @@ class SymbolTable:
 class Interpreter:
   def visit(self, node, context):
       if isinstance(node, OutputNode): return self.visit_OutputNode(node, context)
-      if isinstance(node, ImportNode):
-        return self.visit_ImportNode(node, context)
+
       method_name = f'visit_{type(node).__name__}'
       method = getattr(self, method_name, self.no_visit_method)
       return method(node, context)
@@ -2711,23 +2691,7 @@ class Interpreter:
       value = Number.null
     
     return res.success_return(value)
-  
-  def visit_ImportNode(self, node, context):
-    pkg_name = node.package_name
-    pkg_path = os.path.expanduser(f"~/.ibpp-packages/{pkg_name}/{pkg_name}.pseudo")
-    if not os.path.exists(pkg_path):
-        return RTResult().failure(RTError(
-            node.pos_start, node.pos_end,
-            f"Package '{pkg_name}' not found at {pkg_path}",
-            context
-        ))
-    with open(pkg_path, "r", encoding="utf-8") as f:
-        code = f.read()
-    # Parse and execute the imported code in the current context
-    result, error = run(pkg_path, code, context)
-    if error:
-        return RTResult().failure(error)
-    return RTResult().success(None)
+
 
   def visit_ContinueNode(self, node, context):
     return RTResult().success_continue()

@@ -1,7 +1,0 @@
-{
-    "name": "strings",
-    "version": "1.0.0",
-    "entry": "strings.pseudo",
-    "description": "String manipulation utilities",
-    "files": ["strings.pseudo"]
-  }

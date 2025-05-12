@@ -1,7 +1,0 @@
-{
-    "name": "mathutils",
-    "version": "1.0.0",
-    "entry": "mathutils.pseudo",
-    "description": "Basic math utility functions",
-    "files": ["mathutils.pseudo"]
-  }
