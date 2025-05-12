@@ -1,0 +1,7 @@
+{
+    "name": "sort",
+    "version": "1.0.0",
+    "entry": "sort.pseudo",
+    "description": "Sorting algorithms",
+    "files": ["sort.pseudo"]
+  }

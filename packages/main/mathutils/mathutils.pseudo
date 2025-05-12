@@ -1,0 +1,16 @@
+function factorial(n)
+    if n <= 1 then
+        return 1
+    else
+        return n * factorial(n-1)
+    end if
+end function
+
+function gcd(a, b)
+    loop while b != 0
+        temp = b
+        b = a mod b
+        a = temp
+    end loop
+    return a
+end function

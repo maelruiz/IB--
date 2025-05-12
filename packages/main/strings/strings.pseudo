@@ -1,0 +1,17 @@
+function reverse(s)
+    result = ""
+    i = s.length() - 1
+    loop while i >= 0
+        result = result + s[i]
+        i = i - 1
+    end loop
+    return result
+end function
+
+function to_upper(s)
+    return s.upper()
+end function
+
+function to_lower(s)
+    return s.lower()
+end function
