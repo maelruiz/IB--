@@ -1,6 +1,6 @@
 # IB++ Programming Language
 
-A simple interpreted programming language inspired by BASIC, implemented in Python.
+A simple interpreted programming language inspired by IB JETS, implemented in Python.
 
 ---
 
