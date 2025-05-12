@@ -48,9 +48,9 @@ end if
 
 ## While Loops
 ```pseudo
-while CONDITION
+loop while CONDITION
     STATEMENTS
-end while
+end loop
 ```
 
 ## Loop (For-like)
