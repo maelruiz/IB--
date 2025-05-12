@@ -3,7 +3,7 @@ CSCR = 0
 DONE = false
 
 loop while DONE == false 
-    C = 2
+    C = random(1, 3)
     output "Enter your choice: 1 = Rock, 2 = Paper, 3 = Scissors"
     input U
     U = int(U)

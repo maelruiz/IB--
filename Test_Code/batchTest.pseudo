@@ -1,6 +1,6 @@
-# Comprehensive test script for basic2 language
+// Comprehensive test script for basic2 language
 
-# Test variable assignment and arithmetic operations
+// Test variable assignment and arithmetic operations
 output "=== Testing variable assignment and arithmetic ==="
 NUM = 10
 output "NUM =", NUM 
@@ -23,7 +23,7 @@ output "NUM % 3 =", OUTPUT
 OUTPUT = NUM ^ 2
 output "NUM ^ 2 =", OUTPUT
 
-# Test comparison operators
+// Test comparison operators
 output "=== Testing comparison operators ==="
 output "10 == 10:", 10 == 10
 output "10 != 5:", 10 != 5
@@ -32,7 +32,7 @@ output "5 < 10:", 5 < 10
 output "10 >= 10:", 10 >= 10
 output "5 <= 10:", 5 <= 10
 
-# Test logical operators
+// Test logical operators
 output "=== Testing logical operators ==="
 output "true and true:", true and true
 output "true and false:", true and false
@@ -41,7 +41,7 @@ output "false or false:", false or false
 output "not true:", not true
 output "not false:", not false
 
-# Test if-elif-else statements
+// Test if-elif-else statements
 output "=== Testing if-elif-else statements ==="
 X = 15
 
@@ -53,24 +53,24 @@ else
     output "X is 20 or greater"
 end if
 
-# Test single-line if statement
+// Test single-line if statement
 if X == 15 then output "X equals 15!"
 
-# Test loop from...to
+// Test loop from...to
 output "=== Testing loop from...to ==="
 output "Counting from 1 to 5:"
 loop I from 1 to 6 then
     output I
 end loop
 
-# Test loop with list collection
+// Test loop with list collection
 output "Creating a list with loop:"
 NUMBERS = loop I from 1 to 6 then
     I * I
 end loop
 output NUMBERS
 
-# Test while loop
+// Test while loop
 output "=== Testing while loop ==="
 COUNT = 0
 loop while COUNT < 5 
@@ -78,7 +78,7 @@ loop while COUNT < 5
     COUNT = COUNT + 1
 end loop
 
-# Test break and continue
+// Test break and continue
 output "=== Testing break and continue ==="
 loop I from 0 to 10 
     if I == 3 then
@@ -92,7 +92,7 @@ loop I from 0 to 10
     output "Loop value:", I
 end loop
 
-# Test string operations
+// Test string operations
 output "=== Testing strings ==="
 STR = "Hello, world!"
 output STR
@@ -100,39 +100,39 @@ output "Length:", STR.length()
 output "Uppercase:", STR.upper()
 output "Lowercase:", STR.lower()
 
-# Test string concatenation
+// Test string concatenation
 output "String + String:", "Hello, " + "world!"
 
-# Test string multiplication
+// Test string multiplication
 output "String * 3:", "abc" * 3
 
-# Test string split
+// Test string split
 WORDS = STR.split()
 output "Split result:", WORDS
 
-# Test list operations
+// Test list operations
 output "=== Testing lists ==="
 LIST = [1, 2, 3, 4, 5]
 output "Original list:", LIST
 output "List length:", LIST.length()
 
-# Test list access
+// Test list access
 output "LIST[2] =", LIST[2]
 
-# Test list append
+// Test list append
 LIST.append(6)
 output "After append(6):", LIST
 
-# Test list pop
-POPPED = LIST.pop() # remove last element
+// Test list pop
+POPPED = LIST.pop() // remove last element
 output "Popped value:", POPPED
 output "After pop():", LIST
 
-# Test list with method
+// Test list with method
 LIST.pop(2)
 output "After pop(2):", LIST
 
-# Test functions
+// Test functions
 output "=== Testing functions ==="
 method add(a, b)
     return a + b
@@ -140,7 +140,7 @@ end method
 
 output "add(5, 3) =", add(5, 3)
 
-# Test function with multiple statements
+// Test function with multiple statements
 method calculate(X)
     Y = X * 2
     Z = Y + 10
@@ -149,7 +149,7 @@ end method
 
 output "calculate(5) =", calculate(5)
 
-# Test recursive function
+// Test recursive function
 method factorial(n)
     if n <= 1 then
         return 1
@@ -160,7 +160,7 @@ end method
 
 output "factorial(5) =", factorial(5)
 
-# Test type conversions
+// Test type conversions
 output "=== Testing type conversions ==="
 S = "123"
 N = int(S)
@@ -170,17 +170,17 @@ N = 456
 S = str(N)
 output "Number to string:", S, "Type is string:", is_string(S)
 
-# Test built-in functions
+// Test built-in functions
 output "=== Testing built-in functions ==="
 output "PI value:", math_PI
 
-# Test various type checks
+// Test various type checks
 output "is_number(5):", is_number(5)
 output "is_string('hello'):", is_string("hello")
 output "is_list([1,2,3]):", is_list([1,2,3])
 output "is_function(add):", is_function(add)
 
-# Test method calling with dot notation
+// Test method calling with dot notation
 output "=== Testing method calls with dot notation ==="
 TEXT = "a,b,c,d"
 PARTS = TEXT.split(",")
@@ -190,5 +190,5 @@ NUMBER = 123.456
 STR_NUM = NUMBER.to_string()
 output "Number converted to string:", STR_NUM
 
-# Final output
+// Final output
 output "=== All tests completed ==="

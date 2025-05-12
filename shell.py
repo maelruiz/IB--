@@ -1,4 +1,4 @@
-import basic2
+import language
 import re
 import traceback
 import sys
@@ -6,7 +6,7 @@ import sys
 def collect_input():
     """Collect multi-line input until a complete statement is recognized."""
     lines = []
-    prompt = 'basic > '
+    prompt = 'IB++ > '
     while True:
         try:
             line = input(prompt)
@@ -51,7 +51,7 @@ def collect_input():
             return ""
 
 def main():
-    print("BASIC Programming Language - Enhanced Shell")
+    print("IB++ Programming Language - Enhanced Shell")
     print("Type 'exit()' to exit the shell")
     
     while True:
@@ -64,7 +64,7 @@ def main():
                 print("Exiting...")
                 break
 
-            result, error = basic2.run('<stdin>', text)
+            result, error = language.run('<stdin>', text)
 
             if error:
                 print("\n" + "=" * 40)

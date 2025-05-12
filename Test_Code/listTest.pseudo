@@ -1,0 +1,22 @@
+ARR = [1,2,3,4,5,6,7,8,9,10]
+LOW = 0
+HIGH = ARR.length() - 1
+FOUND = false
+input TARGET
+TARGET = int(TARGET)
+
+loop while LOW <= HIGH and FOUND == false
+    MID = (LOW + HIGH) div 2
+    if TARGET < ARR[MID] then
+        HIGH = MID - 1
+    else if TARGET > ARR[MID] then
+        LOW = MID + 1
+    else
+        output "Found at index: ", MID
+        FOUND = true
+    end if
+end loop
+
+if FOUND == false then
+    output "Could not find"
+end if
