@@ -89,13 +89,6 @@ python language.py your_program.pseudo
 
 ---
 
-## Packaging & Distribution
+## Help
 
-- Zip the project folder and distribute it.
-- Or upload to GitHub for easy sharing.
-
----
-
-## License
-
-MIT License (or specify your own).
+Please contact me at: mruiz{at}lincoln{dot}edu{dot}ar
