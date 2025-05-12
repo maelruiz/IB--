@@ -1,13 +1,4 @@
 #!/usr/bin/env python3
-"""
-IB++ Language Interpreter
-------------------------
-A custom interpreter for a BASIC-like language, supporting variables, functions, lists, collections, control flow, and more.
-
-This file contains the full implementation of the lexer, parser, AST nodes, runtime values, built-in functions, and interpreter logic.
-
-Author: (your name here)
-"""
  
 #######################################
 # IMPORTS
@@ -33,58 +24,42 @@ LETTERS_DIGITS = LETTERS + DIGITS
 #######################################
 
 class Error:
-  """Base class for all errors in the language."""
   def __init__(self, pos_start, pos_end, error_name, details):
-    """
-    Initialize an error.
-    Args:
-        pos_start (Position): Start position of the error.
-        pos_end (Position): End position of the error.
-        error_name (str): Name of the error type.
-        details (str): Error details.
-    """
     self.pos_start = pos_start
     self.pos_end = pos_end
     self.error_name = error_name
     self.details = details
 
   def as_string(self):
-    """Return a string representation of the error with context."""
     result  = f'{self.error_name}: {self.details}\n'
     result += f'File {self.pos_start.fn}, line {self.pos_start.ln + 1}, column {self.pos_start.col + 1}'
     result += '\n\nCode context:\n' + string_with_arrows(self.pos_start.ftxt, self.pos_start, self.pos_end)
     return result
 
 class IllegalCharError(Error):
-  """Error for illegal characters in the source code."""
   def __init__(self, pos_start, pos_end, details):
     super().__init__(pos_start, pos_end, 'Illegal Character', details)
 
 class ExpectedCharError(Error):
-  """Error for missing expected characters in the source code."""
   def __init__(self, pos_start, pos_end, details):
     super().__init__(pos_start, pos_end, 'Expected Character', details)
 
 class InvalidSyntaxError(Error):
-  """Error for invalid syntax in the source code."""
   def __init__(self, pos_start, pos_end, details=''):
     super().__init__(pos_start, pos_end, 'Invalid Syntax', details)
 
 class RTError(Error):
-  """Runtime error during program execution."""
   def __init__(self, pos_start, pos_end, details, context):
     super().__init__(pos_start, pos_end, 'Runtime Error', details)
     self.context = context
 
   def as_string(self):
-    """Return a string representation of the runtime error with traceback."""
     result  = self.generate_traceback()
     result += f'{self.error_name}: {self.details}'
     result += '\n\nCode context:\n' + string_with_arrows(self.pos_start.ftxt, self.pos_start, self.pos_end)
     return result
 
   def generate_traceback(self):
-    """Generate a traceback string for the error context."""
     result = '\nTraceback (most recent call last):\n'
     pos = self.pos_start
     ctx = self.context
@@ -114,16 +89,7 @@ class RTError(Error):
 #######################################
 
 class Position:
-  """Represents a position in the source code."""
   def __init__(self, idx, ln, col, fn, ftxt):
-    """
-    Args:
-        idx (int): Character index in the file.
-        ln (int): Line number.
-        col (int): Column number.
-        fn (str): Filename.
-        ftxt (str): Full file text.
-    """
     self.idx = idx
     self.ln = ln
     self.col = col
@@ -131,7 +97,6 @@ class Position:
     self.ftxt = ftxt
 
   def advance(self, current_char=None):
-    """Advance the position by one character."""
     self.idx += 1
     self.col += 1
 
@@ -142,7 +107,6 @@ class Position:
     return self
 
   def copy(self):
-    """Return a copy of this position."""
     return Position(self.idx, self.ln, self.col, self.fn, self.ftxt)
 
 #######################################
@@ -533,6 +497,42 @@ class IfNode:
 
 class LoopNode:
     def __init__(self, var_name_tok, start_value_node, end_value_node, body_node, should_return_null):
+        self.var_name_tok = var_name_tok
+        self.start_value_node = start_value_node
+        self.end_value_node = end_value_node
+        self.body_node = body_node
+        self.should_return_null = should_return_null
+
+        self.pos_start = self.var_name_tok.pos_start
+        self.pos_end = self.body_node.pos_end
+
+class WhileNode:
+  def __init__(self, condition_node, body_node, should_return_null):
+    self.condition_node = condition_node
+    self.body_node = body_node
+    self.should_return_null = should_return_null
+
+    self.pos_start = self.condition_node.pos_start
+    self.pos_end = self.body_node.pos_end
+
+class FuncDefNode:
+  def __init__(self, var_name_tok, arg_name_toks, body_node, should_auto_return):
+    self.var_name_tok = var_name_tok
+    self.arg_name_toks = arg_name_toks
+    self.body_node = body_node
+    self.should_auto_return = should_auto_return
+
+    if self.var_name_tok:
+      self.pos_start = self.var_name_tok.pos_start
+    elif len(self.arg_name_toks) > 0:
+      self.pos_start = self.arg_name_toks[0].pos_start
+    else:
+      self.pos_start = self.body_node.pos_start
+
+    self.pos_end = self.body_node.pos_end
+
+class CallNode:
+  def __init__(self, node_to_call, arg_nodes):
     self.node_to_call = node_to_call
     self.arg_nodes = arg_nodes
 
