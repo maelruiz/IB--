@@ -92,3 +92,7 @@ python language.py your_program.pseudo
 ## Help
 
 Please contact me at: mruiz{at}lincoln{dot}edu{dot}ar
+
+## Common Issues
+
+- Errors within loops and other code blocks may be indicated at the beginning of the code block - so if the loop syntax seems correct, check the contents.
