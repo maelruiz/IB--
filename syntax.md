@@ -6,6 +6,7 @@
 - **Booleans:** `true`, `false`
 - **Null:** `null`
 - **Lists:** `[1, 2, 3]`, `["a", "b"]`
+- **Collectoins:** `new Collection()`
 
 ## Variables
 ```pseudo
@@ -101,6 +102,7 @@ output EXPR1, EXPR2, ...
 - `pop(list)` — pop from list
 - `extend(list, list2)` — extend list
 - `len(list or string)` — length
+- `.length()` — length
 - `str(value)` — convert to string
 - `int(value)` — convert to int
 - `random(a, b)` — random int in [a, b]
@@ -117,6 +119,13 @@ output EXPR1, EXPR2, ...
 - `L.append(value)`
 - `L.pop()`
 - `L.extend(list)`
+
+## Collection Methods
+- `COLL.length()`
+- `COLL.getNext()`
+- `COLL.hasNext()`
+- `COLL.addItem(ITEM)`
+- `COLL.resetNext()`
 
 ## Comments
 ```pseudo
