@@ -10,7 +10,7 @@ setup(
         ]
     },
     install_requires=[],
-    author="Your Name",
+    author="Mael Ruiz",
     description="IB++ Programming Language",
     python_requires=">=3.7",
 )
